@@ -164,15 +164,15 @@
             text-align: left;
           }
           .weather-widget-result div:nth-child(odd) {
-            background: #2980B9;  /* fallback for old browsers */
-            background: -webkit-linear-gradient(to bottom, #FFFFFF, #6DD5FA, #2980B9);  /* Chrome 10-25, Safari 5.1-6 */
-            background: linear-gradient(to bottom, #FFFFFF, #6DD5FA, #2980B9); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+            background: #2980B9;
+            background: -webkit-linear-gradient(to bottom, #FFFFFF, #6DD5FA, #2980B9);
+            background: linear-gradient(to bottom, #FFFFFF, #6DD5FA, #2980B9);
             margin-right: 10px;
           }
           .weather-widget-result div:nth-child(even) {
-            background: #e65c00; /* fallback for old browsers */
-            background: -webkit-linear-gradient(to left, #e65c00, #f9d423); /* Chrome 10-25, Safari 5.1-6 */
-            background: linear-gradient(to left, #e65c00, #f9d423); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+            background: #e65c00;
+            background: -webkit-linear-gradient(to left, #e65c00, #f9d423);
+            background: linear-gradient(to left, #e65c00, #f9d423);
             margin-left: 10px;
           }
           .weather-widget-result div:nth-child(odd) svg {
