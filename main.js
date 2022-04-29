@@ -9,18 +9,17 @@
       // attaches shadow tree and returns shadow root reference
       const shadow = this.attachShadow({ mode: 'open' });
 
-      // creating a container for the editable-list component
+      // creating a container for the weather widget component
       const weatherWidgetContainer = document.createElement('div');
 
       // get attribute values from getters
       const title = this.title;
       const theme = this.theme;
 
-      // adding a class to our container for the sake of clarity
       weatherWidgetContainer.classList.add('weather-widget');
       weatherWidgetContainer.setAttribute('data-theme', theme);
 
-      // creating the inner HTML of the editable list element
+      // creating the inner HTML of the weather widget element
       weatherWidgetContainer.innerHTML = `
         <style>
           .weather-widget {
@@ -205,7 +204,7 @@
             <label>
               <input class="weather-widget-input" type="text" placeholder="Example: sunny, clear" />
             </label>
-            <button disabled class="get-minimum-umbrellas-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8z"/><path d="M9.293 8.707 12.586 12l-3.293 3.293 1.414 1.414L15.414 12l-4.707-4.707-1.414 1.414z"/></svg></button>
+            <button disabled class="submit-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8z"/><path d="M9.293 8.707 12.586 12l-3.293 3.293 1.414 1.414L15.414 12l-4.707-4.707-1.414 1.414z"/></svg></button>
           </div>
           <span class="error-message">
             <p>One or more values are invalid</p>
@@ -217,11 +216,13 @@
       `;
 
       // binding methods
-      this.addWeatherRow = this.addWeatherRow.bind(this);
-      this.minimumUmbrellas = this.minimumUmbrellas.bind(this);
+      this.getMinimumUmbrellas = this.getMinimumUmbrellas.bind(this);
+      this.submit = this.submit.bind(this);
       this.validateInput = this.validateInput.bind(this);
       this.resetWidget = this.resetWidget.bind(this);
       this.getIcon = this.getIcon.bind(this);
+      this.getWeatherArray = this.getWeatherArray.bind(this);
+      this.addWeatherRows = this.addWeatherRows.bind(this);
 
       // appending the container to the shadow DOM
       shadow.appendChild(weatherWidgetContainer);
@@ -258,22 +259,57 @@
       }
     }
 
-    // create the weather card
-    addWeatherRow(weather) {
+    // assign input value to an array
+    getWeatherArray(value) {
+      return value
+        .replace(/['"\[\]\}]+/g, '')
+        .split(',')
+        .map((item) => item.trim().toLowerCase())
+        .filter((item) => item !== '');
+    }
+
+    // create the weather cards
+    addWeatherRows(weatherArray) {
       const resultContainer = this.shadowRoot.querySelector(
         '.weather-widget-result'
       );
-      const div = document.createElement('div');
-      div.innerHTML = `${this.getIcon(weather)} <p>${weather}</p>`;
 
-      resultContainer.appendChild(div);
+      weatherArray.forEach((weather) => {
+        const div = document.createElement('div');
+        div.innerHTML = `${this.getIcon(weather)} <p>${weather}</p>`;
+
+        resultContainer.appendChild(div);
+      });
     }
 
     // return the minimum umbrellas needed
-    minimumUmbrellas() {
+    getMinimumUmbrellas(weatherArray) {
       let homeUmbrellas = 0;
       let officeUmbrellas = 0;
 
+      weatherArray.forEach((item, index) => {
+        if (item === 'rainy' || item === 'thunderstorms') {
+          if (index % 2 === 0) {
+            // morning
+            if (homeUmbrellas > 0) {
+              homeUmbrellas--;
+            }
+            officeUmbrellas++;
+          } else {
+            // afternoon
+            if (officeUmbrellas > 0) {
+              officeUmbrellas--;
+            }
+            homeUmbrellas++;
+          }
+        }
+      });
+
+      return homeUmbrellas + officeUmbrellas;
+    }
+
+    // submit input and display result
+    submit() {
       const resetButton = this.shadowRoot.querySelector('.reset-button');
       const textInput = this.shadowRoot.querySelector('.weather-widget-input');
       const resultContainer = this.shadowRoot.querySelector(
@@ -284,41 +320,17 @@
       resultContainer.classList.remove('show-result');
 
       if (textInput.value) {
-        const weatherArray = textInput.value
-          .replace(/['"\[\]]+/g, '')
-          .split(',')
-          .map((item) => item.trim().toLowerCase())
-          .filter((item) => item !== '');
-
-        weatherArray.forEach((item, index) => {
-          if (item === 'rainy' || item === 'thunderstorms') {
-            if (index % 2 === 0) {
-              // morning
-              if (homeUmbrellas > 0) {
-                homeUmbrellas--;
-              }
-              officeUmbrellas++;
-            } else {
-              // afternoon
-              if (officeUmbrellas > 0) {
-                officeUmbrellas--;
-              }
-              homeUmbrellas++;
-            }
-          }
-
-          this.addWeatherRow(item);
-        });
-
-        const totalUmbrella = `Umbrella(s) needed: ${
-          homeUmbrellas + officeUmbrellas
-        }
+        const weatherArray = this.getWeatherArray(textInput.value);
+        const totalUmbrella = this.getMinimumUmbrellas(weatherArray);
+        const totalUmbrellaText = `Umbrella(s) needed: ${totalUmbrella}
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M22 13v-1a10 10 0 0 0-20 0v1h9v7a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-1h-2v1h-1v-7zM12 4a8.013 8.013 0 0 1 7.938 7H4.062A8.013 8.013 0 0 1 12 4z"/></svg>
         `;
-        const div = document.createElement('div');
-        div.innerHTML = totalUmbrella;
+        const totalUmbrellaTextContainer = document.createElement('div');
+
+        this.addWeatherRows(weatherArray);
+        totalUmbrellaTextContainer.innerHTML = totalUmbrellaText;
+        resultContainer.appendChild(totalUmbrellaTextContainer);
         resetButton.style.display = 'inline-block';
-        resultContainer.appendChild(div);
         setTimeout(() => {
           resultContainer.classList.add('show-result');
         }, 100);
@@ -328,6 +340,8 @@
     // input validation
     validateInput(e) {
       const resetButton = this.shadowRoot.querySelector('.reset-button');
+      const submitButton = this.shadowRoot.querySelector('.submit-button');
+      const errorMessage = this.shadowRoot.querySelector('.error-message');
       const allowed = [
         'clear',
         'sunny',
@@ -336,43 +350,33 @@
         'windy',
         'thunderstorms',
       ];
-      const getMinimumUmbrellasButton = this.shadowRoot.querySelector(
-        '.get-minimum-umbrellas-button'
-      );
-      const errorMessage = this.shadowRoot.querySelector('.error-message');
 
       if (e.target.value) {
-        const weatherArray = e.target.value
-          .replace(/['"\[\]]+/g, '')
-          .split(',')
-          .map((item) => item.trim().toLowerCase())
-          .filter((item) => item !== '');
+        const weatherArray = this.getWeatherArray(e.target.value);
 
         if (weatherArray.some((item) => !allowed.includes(item))) {
           resetButton.style.display = 'inline-block';
           errorMessage.style.display = 'block';
-          getMinimumUmbrellasButton.setAttribute('disabled', true);
+          submitButton.setAttribute('disabled', true);
         } else {
           resetButton.style.display = 'none';
           errorMessage.style.display = 'none';
-          getMinimumUmbrellasButton.removeAttribute('disabled');
+          submitButton.removeAttribute('disabled');
 
           if (e.key === 'Enter') {
-            this.minimumUmbrellas();
+            this.submit();
           }
         }
       } else {
         resetButton.style.display = 'none';
         errorMessage.style.display = 'none';
-        getMinimumUmbrellasButton.setAttribute('disabled', true);
+        submitButton.setAttribute('disabled', true);
       }
     }
 
     resetWidget() {
       const resetButton = this.shadowRoot.querySelector('.reset-button');
-      const getMinimumUmbrellasButton = this.shadowRoot.querySelector(
-        '.get-minimum-umbrellas-button'
-      );
+      const submitButton = this.shadowRoot.querySelector('.submit-button');
       const errorMessage = this.shadowRoot.querySelector('.error-message');
       const textInput = this.shadowRoot.querySelector('.weather-widget-input');
       const resultContainer = this.shadowRoot.querySelector(
@@ -381,25 +385,20 @@
 
       errorMessage.style.display = 'none';
       resetButton.style.display = 'none';
-      getMinimumUmbrellasButton.setAttribute('disabled', true);
+      submitButton.setAttribute('disabled', true);
       textInput.value = '';
       resultContainer.innerHTML = '';
     }
 
     // fires after the element has been attached to the DOM
     connectedCallback() {
-      const getMinimumUmbrellasButton = this.shadowRoot.querySelector(
-        '.get-minimum-umbrellas-button'
-      );
+      const submitButton = this.shadowRoot.querySelector('.submit-button');
       const weatherWidgetInput = this.shadowRoot.querySelector(
         '.weather-widget-input'
       );
       const resetButton = this.shadowRoot.querySelector('.reset-button');
-      getMinimumUmbrellasButton.addEventListener(
-        'click',
-        this.minimumUmbrellas,
-        false
-      );
+
+      submitButton.addEventListener('click', this.submit, false);
       weatherWidgetInput.addEventListener('keyup', this.validateInput, false);
       resetButton.addEventListener('click', this.resetWidget, false);
     }
